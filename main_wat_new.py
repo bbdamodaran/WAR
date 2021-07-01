@@ -33,19 +33,6 @@ method = 'WAR'
 # cifar 10 mean and std : mean=(0.4914, 0.4822, 0.4465), std=(0.247, 0.2435, 0.2616)
 # cifar 100 mean and std : transforms.Normalize(mean=(0.5071, 0.4865, 0.4409), std=(0.2673, 0.2564, 0.2762))
 
-
-
-# transform for the data augmentation
-transform_dataaug = transforms.Compose([transforms.ToPILImage(),
-                                        transforms.RandomChoice([transforms.RandomAffine(degrees=0, translate=(0.2, 0.2)),
-                                        transforms.RandomHorizontalFlip()]),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize((0.4914, 0.4822, 0.4465), (1, 1, 1))
-                                        # transforms.Normalize((0.5, 0.5, 0.5), (1, 1, 1))
-                                        ])
-
-
-
 if data_set == 'cifar10':
     # pre-processing to tensor, and mean subtraction
     transform = transforms.Compose(
