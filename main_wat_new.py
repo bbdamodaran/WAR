@@ -292,29 +292,26 @@ def train_eval_WAT(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fnam
                    verbose=1):
     
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    cross_entropy = nn.CrossEntropyLoss() # cross entropy loss
-    lr_step_decay = 0.00001   
+    cross_entropy = nn.CrossEntropyLoss() # cross entropy loss 
     
     # Ground cost of WAT from word2vec model
     #import ot
-    from sklearn.metrics.pairwise import cosine_similarity
-    #M = np.load('word2vec/cifar100_word2vec_cost.npy')
-    #word2vec_embed = np.load('/home/damodara/DeepNetModels/word2vec/cifar10label_word_vec.npz')
-    word2vec_embed = np.load('/home/damodara/DeepNetModels/word2vec/fashionmnist_word_vec.npz')
-    # word2vec_embed = np.load('/home/damodara/OT/WAT/py_torch/word2vec/cifar100label_word_vec.npz') # cifar100
+    if data_set == 'cifar10':
+        word2vec_embed = np.load('/word2vec_embed/cifar10label_word_vec.npz')
+    elif data_set == 'cifar100':
+        # word2vec_embed = np.load('/home/damodara/DeepNetModels/word2vec/fashionmnist_word_vec.npz')
+        word2vec_embed = np.load('/word2vec_embed/cifar100label_word_vec.npz') # cifar100
+    elif data_set == 'fashion-mnist':
+        pass
+        
     embed = word2vec_embed['embed']
-    #M = ot.dist(embed, embed, 'euclidean')
-    # M = M/M.max()
-    # M = np.exp(-M)  #  dissimilrity to similarity
-    # print(M)
+    M = ot.dist(embed, embed, 'euclidean')
+    M = M/M.max()
+    M = np.exp(-M)  #  dissimilrity to similarity
 
-    tmp = np.load('cifar100_word2vec_embed_cost.npz')
-    M = tmp['M']
     # M[:,:]=1 # for total variation cost
     for i in range(nclass):
-        M[i,i]=0
-    # eps=0.005 # adv norm
-
+        M[i,i]=0 # setting digaonal as zero
     
     hist ={'tot_loss':list(), 'cce_loss':list(), 'wat_loss':list(), 'train_acc':list()}
     test_accuracy = list()
@@ -373,8 +370,6 @@ def train_eval_WAT(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fnam
 
 
             loss = classification_loss + beta_w*wat_lds #+ ent_loss
-            # print(" CCE loss:{}, WAT loss:{}, tot loss:{}, beta_w:{}".format(classification_loss.item(), wat_lds.item(),
-            #                                                                  loss.item(), beta_w.item()))
             loss.backward()
             optimizer.step()
             
@@ -531,7 +526,7 @@ for r in range(num_runs):
 
 
         #%% cross entropy model
-        if method = 'CCE'
+        if method == 'CCE':
             cpname ='results/cifar100_runs3/Sym_CCE_Loss/'
             model_save = True
             file_save = True
