@@ -16,7 +16,6 @@ import torch.nn as nn
 from torchvision import datasets, transforms
 import utils_pytorch_new as utils
 from utils_pytorch_new import *
-from CustomLoader import CustomDataset  # custom data loder
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
@@ -167,15 +166,13 @@ def train_eval_CCE(model, tr_loader, criterion,epochs=1,fname=None,verbose=1):
         else:
             blr = 0.001
         for param_group in optimizer.param_groups:
-            # param_group['lr']=alpha_plan[epoch]
             param_group['lr'] = blr
-            # param_group['betas']=(beta1, 0.999) # Only change beta1
+
         if 1:
             ce_loss = utils.AverageMeter()
             prec = utils.AverageMeter()
             
         running_loss = 0.0
-    #    for i in tqdm(range(steps_epoch)):
         for i, (inputs, labels) in enumerate(tr_loader):
   
     
@@ -222,11 +219,9 @@ def train_eval_VAT(model, tr_loader, epochs=1, eps=2.5, fname=None, verbose=0):
     test_accuracy = list()
     for epoch in range(0, epochs):
         model.train()
-        beta1 = 0.9
         if epoch >80:
             blr = 0.00001
-            # blr = 0.001 # SGD
-            beta1 = 0.1        
+            # blr = 0.001 # SGD       
         elif epoch >40:
             blr = 0.0001
             # blr = 0.01 # SGD       
@@ -254,6 +249,7 @@ def train_eval_VAT(model, tr_loader, epochs=1, eps=2.5, fname=None, verbose=0):
             output = model(x_l)
             classification_loss = cross_entropy(output, y_l)
             
+            # setting the weight for the VAT loss
             if epoch>=15:
                 beta = 5
             else:
@@ -288,7 +284,7 @@ def train_eval_VAT(model, tr_loader, epochs=1, eps=2.5, fname=None, verbose=0):
             print('Epoch: {:d}/{:d} Test acc:{:}'.format(epoch, epochs, test_acc))
     return hist, test_accuracy
 
-def train_eval_WAT(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fname=None,nbloop=5,
+def train_eval_WAR(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fname=None,nbloop=5,
                    verbose=1):
     
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -317,21 +313,16 @@ def train_eval_WAT(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fnam
     test_accuracy = list()
     for epoch in range(0, epochs):
         model.train()
-        # beta1 = 0.9
         # if epoch >120: # CIFAR 100
         if epoch > 80:  # CIFAR 10
         # if epoch >40: # FMNIST
             blr = 0.00001
-            # blr = 0.001 # SGD
-            beta1 = 0.1
-            
+            # blr = 0.001 # SGD            
         # elif epoch >80:  # CIFAR 100
         if epoch > 40:  # CIFAR 10
         # elif epoch >20: # FMNIST
-
             blr = 0.0001
-            # blr = 0.01 # SGD
-            
+            # blr = 0.01 # SGD           
         else:
             blr = 0.001
             # blr = 0.1 # SGD
@@ -364,7 +355,8 @@ def train_eval_WAT(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fnam
 
             if type(eps).__module__ == np.__name__:
                 eps = torch.from_numpy(np.array(eps)).float().to(device)
-
+            
+            #WAR loss
             wat_lds = wat_loss(model, x_l, l_y, M, reg=reg, eps=eps,
                                pred_label=True, adv_img=False,deep_layer_adv=False,nbloop=nbloop)
 
@@ -436,7 +428,7 @@ def loss_plot(hist, testacc=None, pname= None, fname=None):
             plt.legend(loc='best')
             plt.close()
 
-# loss function of the 
+# loss function of the SCE state of the art
 class SCELoss(torch.nn.Module):
     def __init__(self, alpha=1.0, beta=1.0, num_classes=10):
         super(SCELoss, self).__init__()
@@ -500,7 +492,6 @@ for r in range(num_runs):
         n_trainlabel = torch.from_numpy(n_trainlabel).float().long()
 
         # %% Training data generator based on noisy labels
-        # trset = CustomDataset(traindata, n_trainlabel, transform = transform_dataaug)
         trset = torch.utils.data.TensorDataset(traindata, n_trainlabel)
         tr_loader = torch.utils.data.DataLoader(trset, batch_size=batch_size,
                                                     shuffle=True, num_workers=8)
@@ -623,7 +614,7 @@ for r in range(num_runs):
                 fname = None
             wat_model = basemodel(input_shape,nclass).to(device)
             wat_model.apply(weights_init)
-            wat_hist, wat_test_acc = train_eval_WAT(wat_model, tr_loader, epochs=epochs, reg=reg, eps=eps, beta=beta,
+            wat_hist, wat_test_acc = train_eval_WAR(wat_model, tr_loader, epochs=epochs, reg=reg, eps=eps, beta=beta,
                                                     fname=fname, nbloop=sink_iter,verbose=1)
             wat_acc[k,r] = np.mean(wat_test_acc[-10:])
             wat_acc[str(sink_iter)] = np.mean(wat_test_acc[-10:])
@@ -641,9 +632,6 @@ for r in range(num_runs):
                 np.save(fname+'_all_sink_iter_test_acc.npy', wat_acc)
 
 
-# pn = 'results/cifar10/WAT_test/'
-# fn = 'wat_cifar10.npz'
-# np.savez(os.path.join(pn,fn), vat_acc = vat_acc, vat_std_acc = vat_acc_std)
 
 
 
