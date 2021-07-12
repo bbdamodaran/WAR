@@ -8,7 +8,7 @@ B.B.Damodaran et.al, WAR: Wasserstien adversarial regularization for learning wi
 Accepted at IEEE PAMI
 
 """
-
+import argparse
 import numpy as np
 import os
 import torch
@@ -22,7 +22,7 @@ from torch.autograd import Variable
 # for plotting and saving the plot
 import matplotlib as mpl
 import matplotlib.pylab as plt
-
+import ot
 
 
 batch_size = 256
@@ -39,10 +39,10 @@ if data_set == 'cifar10':
      transforms.Normalize((0.4914, 0.4822, 0.4465), (1, 1, 1)),
      ])
     # data generator to load the full training data into memory
-    trainset =  datasets.CIFAR10(root='./data/cifar10', train=True,
+    trainset =  datasets.CIFAR10(root='./data1/cifar10', train=True,
                                             download=True, transform=transform)
     # test data generator
-    testset =  datasets.CIFAR10(root='./data/cifar10', train=False,
+    testset =  datasets.CIFAR10(root='./data/1cifar10', train=False,
                                             download=True,transform=transform)
 elif data_set == 'mnist':
     # pre-processing to tensor and [-1, 1] scaling
@@ -85,9 +85,9 @@ elif data_set == 'cifar100':
     
 
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                            shuffle=True, num_workers=8)
+                                            shuffle=True )
 test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                            shuffle=False, num_workers=8)
+                                            shuffle=False)
                                             
 #%% load all the training data into memory for generating the noisy labels
 trainlabel =list()
@@ -291,12 +291,12 @@ def train_eval_WAR(model, tr_loader,epochs=1, reg=0.05, eps=0.005, beta=10, fnam
     cross_entropy = nn.CrossEntropyLoss() # cross entropy loss 
     
     # Ground cost of WAT from word2vec model
-    #import ot
+    #
     if data_set == 'cifar10':
-        word2vec_embed = np.load('/word2vec_embed/cifar10label_word_vec.npz')
+        word2vec_embed = np.load('C:/dev/WAR/wor2vec_embed/cifar10label_word_vec.npz')
     elif data_set == 'cifar100':
         # word2vec_embed = np.load('/home/damodara/DeepNetModels/word2vec/fashionmnist_word_vec.npz')
-        word2vec_embed = np.load('/word2vec_embed/cifar100label_word_vec.npz') # cifar100
+        word2vec_embed = np.load('.\word2vec_embed\cifar100label_word_vec.npz') # cifar100
     elif data_set == 'fashion-mnist':
         pass
         
@@ -494,7 +494,7 @@ for r in range(num_runs):
         # %% Training data generator based on noisy labels
         trset = torch.utils.data.TensorDataset(traindata, n_trainlabel)
         tr_loader = torch.utils.data.DataLoader(trset, batch_size=batch_size,
-                                                    shuffle=True, num_workers=8)
+                                                    shuffle=True)
         # device name
 
         #%% model architectures
@@ -506,7 +506,7 @@ for r in range(num_runs):
         elif data_set == 'cifar10':
             input_shape = np.array([3, 32, 32])
             drop_out= None
-            basemodel = cnn_coteach #cifar10_featext
+            basemodel = cnn_coteach #cifar10_featext #
         elif data_set == 'cifar100':
             input_shape = np.array([3, 32, 32])
             basemodel = cnn_coteach
@@ -595,7 +595,7 @@ for r in range(num_runs):
             pname = './results/cifar10/WAT_SinkIter/tmp/'
             reg = np.array([0.05])
             eps = np.array([0.005])
-            sink_iter = np.array([20])
+            sink_iter = 20
             model_save = False
             file_save = False
             beta = 10
@@ -630,6 +630,11 @@ for r in range(num_runs):
             print('Finished noise = {:}, reg = {:}, eps = {:}'.format(noise[k], reg, eps))
             if file_save:
                 np.save(fname+'_all_sink_iter_test_acc.npy', wat_acc)
+                
+
+
+# if __name__ == '_file__':
+    
 
 
 
